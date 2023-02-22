@@ -7,6 +7,10 @@ import MapView from "react-native-maps";
 import { TurfWorker } from "./turf";
 import { Locator } from "./Locator";
 
+import * as Location from "expo-location";
+
+import { mapStyle } from "./MapStyling";
+
 export default function App() {
   const [location, setLocation] = useState(null);
   const [locationErrorMessage, setLocationErrorMessage] = useState(null);
@@ -24,7 +28,7 @@ export default function App() {
     locator.getCurrentPositionAsync()
       .then((newLocation) => {
 
-        console.log(newLocation, '<-- newLocation');
+        // console.log(newLocation, '<-- newLocation');
         setLocation(newLocation);
 
         const revealedFog = turfWorker.generateNewFog(newLocation);
@@ -36,15 +40,27 @@ export default function App() {
         console.log(err);
       })
 
+      Location.watchPositionAsync({
+        accuracy: Location.Accuracy.High,
+        distanceInterval: 10,
+      }, (changedLocation) => {
+        // console.log('<<<<<<<< changedLocation >>>>>>>', changedLocation);
+        //  const revealedFog = turfWorker.generateNewFog(changedLocation);
+        setLocation(changedLocation);
+        
+        const revealedFog2 = turfWorker.uncoverFog(changedLocation, revealedFog);
+        setRevealedFog(revealedFog2);
+
+      });
 
       //Get DATA from DB here,
       //If no previous data is available then generate new fog.
       
       //Generate new fog
 
-  }, [])
+  }, []);
 
-
+  // console.log('<<<<< location >>>>>>>', location);
 
   
   if (locationErrorMessage) {
@@ -72,7 +88,7 @@ export default function App() {
           <Text style={styles.text}>Print React state</Text>
         </Pressable>
 
-        <Text>Open up App.js to start working on your app! A Change.</Text>
+        <Text>Fog-O-War</Text>
         <MapView
           initialRegion={{
             latitude: location.coords.latitude,
@@ -83,6 +99,7 @@ export default function App() {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           showsUserLocation={true}
+          // customMapStyle={mapStyle}
           mapPadding={{
             top: 30,
           }}
@@ -109,7 +126,7 @@ export default function App() {
   }
 
   function printState() {
-    console.log(revealedFog, '<-- revealedCoords')
+    console.log(JSON.stringify(revealedFog), '<-- revealedCoords')
   }
 }
 const styles = StyleSheet.create({
@@ -120,8 +137,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   map: {
-    width: "100%",
-    height: "100%",
+    width: "90%",
+    height: "90%",
   },
   button: {
     alignItems: 'center',
